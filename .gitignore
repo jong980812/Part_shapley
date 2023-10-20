@@ -1,0 +1,10 @@
+*.pyc
+multinode_sh/
+.vscode/
+result/
+moana*
+
+
+
+
+*ipynb
