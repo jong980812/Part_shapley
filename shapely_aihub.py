@@ -8,7 +8,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import itertools
 from torchvision import datasets, transforms, models
-from util.transform import ThresholdTransform,AddNoise,DetachWhite
+from shapley.transform import ThresholdTransform,AddNoise,DetachWhite
 from einops import rearrange
 from itertools import product
 import math
@@ -17,7 +17,7 @@ import argparse
 import torchvision
 import random
 
-from util.transform import get_transform
+from shapley.transform import get_transform
 
 def get_args_parser():
     parser = argparse.ArgumentParser('MAE fine-tuning for image classification', add_help=False)
