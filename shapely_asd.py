@@ -7,7 +7,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import itertools
 from torchvision import datasets, transforms, models
-from util.custom_transform import ThresholdTransform,AddNoise,DetachWhite
+from util.transform import ThresholdTransform,AddNoise,DetachWhite
 from einops import rearrange
 from itertools import product
 import math

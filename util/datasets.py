@@ -14,7 +14,7 @@ import PIL
 from torchvision import datasets, transforms
 from timm.data import create_transform
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
-from util.custom_transform import ThresholdTransform,AddNoise,DetachWhite
+from util.transform import ThresholdTransform,AddNoise,DetachWhite
 
 def build_dataset(is_train, args):
     if args.dataset == 'asd_part_based' :

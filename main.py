@@ -38,7 +38,7 @@ import util.model
 import util.model_rpp
 import util.scratch_cnn
 import torchvision.models as models
-from util.custom_transform import set_conv_padding_mode
+from util.transform import set_conv_padding_mode
 
 def get_args_parser():
     parser = argparse.ArgumentParser('MAE fine-tuning for image classification', add_help=False)
