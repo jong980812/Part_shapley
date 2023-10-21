@@ -8,7 +8,6 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 import itertools
 from torchvision import datasets, transforms, models
-from shapley.transform import ThresholdTransform,AddNoise,DetachWhite
 from einops import rearrange
 from itertools import product
 import math
@@ -16,21 +15,30 @@ import torchvision.models as models
 import argparse
 import torchvision
 import random
-
+        
 from shapley.transform import get_transform
-
+from shapley.dataset import Shapley_part,get_dataset_information
+from shapley.get_shapley_value import get_ordered_pair,get_shapley_matrix
+from shapley.visualizer import dict_to_bar
 def get_args_parser():
     parser = argparse.ArgumentParser('MAE fine-tuning for image classification', add_help=False)
 
     #! custom argument
     parser.add_argument('--data_path',default='/local_datasets/ai_hub/ai_hub_sketch_mw/01/val/',type=str,
                         help='Data_path')
-    
+    parser.add_argument('--json_path',default='/data/datasets/ai_hub_sketch_json_asd_version',type=str,
+                    help='Json_path')
+    parser.add_argument('--out_path',default='./',type=str,
+                    help='out_path')
+    parser.add_argument('--save_path',default='./',type=str,
+                    help='figure save path')
     #Model
     parser.add_argument('--weight', default=10, type=str,
                         help='Model weights path')
     parser.add_argument('--padding_mode',default='zeros',type=str,
-                        help='Set padding of Conv2d')
+                        help='Set padding of Conv2d')    
+    parser.add_argument('--nb_classes',default=2,type=int,
+                        help='number of head class')
     
     #Transform
     parser.add_argument('--norm_type',default='ai_hub',type=str,
@@ -39,6 +47,11 @@ def get_args_parser():
                         help='Random seed')
     parser.add_argument('--size', nargs=2, type=int, metavar=('H', 'W'), 
                         help='Height, width')
+    
+    #Training
+    
+    parser.add_argument('--batch_size',default=10, type=int,
+                        help='Set batch size')
     
     
     
@@ -54,7 +67,6 @@ def get_args_parser():
     return parser
     
 def main(args):
-    transform = get_transform(args)
 
     
     random_seed=777
@@ -65,7 +77,7 @@ def main(args):
     random.seed(random_seed)
     
     model=models.efficientnet_b1(pretrained=True,progress=False)
-    model.classifier[1] = torch.nn.Linear(1280, 5)
+    model.classifier[1] = torch.nn.Linear(1280, args.nb_classes)
     for name, layer in model.named_modules():
         if isinstance(layer, torch.nn.Conv2d):
             layer.padding_mode = args.padding_mode
@@ -79,85 +91,73 @@ def main(args):
     print(msg)
     
 
-    
-  
-    
+    transform = get_transform(args)
+    data_information = get_dataset_information(args)
+    print(f"Transform:\n{transform}")
+    print(f"Target Classes:{data_information['class_names']}")
+    print(f"Target Task:{data_information['task']}")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f'Device:{device}')
+
+    model.eval()
     # load dataset
-    print(data_path)
-    dataset = shapley_part(data_path,'/data/datasets/ai_hub_sketch_json_asd_version',task=task,binary_thresholding=240,transform=transform)
-    data_loader=DataLoader(dataset,10,shuffle=False,num_workers=8)
-    print(dataset)
+
     
     # ready
-    model.eval()
-    part_name = ["human_body","face","head","hair", "neck","eye", "nose", "ear", "mouth","pocket","arm","hand", "leg","foot", "upper_body_else_arm"]#원하는 파트
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
     all_ordered_pair,weights = get_ordered_pair()
     part_number = all_ordered_pair.shape[0]
-    part_count = {i: 0 for i in range(part_number)}
-    
-    num_correct = 0
-    for new_imgs, original_image, label in tqdm(data_loader):
-        # print(new_imgs.shape)
-        input_data = new_imgs
-        # print('complete')
-        batch_size = input_data.shape[0]
-        input_data = rearrange(input_data,  'b t c h w -> (b t) c h w')
+    for class_name in data_information['class_names']:
+        print(f'\n#####################Target_class:{class_name} getting Shapley value#####################')
+        target_path = os.path.join(args.data_path, class_name)
+        dataset = Shapley_part(target_path,args.json_path,task=data_information['task'],transform=transform)
+        data_loader=DataLoader(dataset,args.batch_size,shuffle=False,num_workers=8)
+        print(dataset)
+        num_correct = 0
+        part_count = {i: 0 for i in range(part_number)}
+        for new_imgs, original_image, label in tqdm(data_loader):
+            # print(new_imgs.shape)
+            input_data = new_imgs
+            # print('complete')
+            batch_size = input_data.shape[0]
+            input_data = rearrange(input_data,  'b t c h w -> (b t) c h w')
+            
+            model.to(device)
+            input_data = input_data.to(device)
+            original_image = original_image.to(device)
+            label = label.to(device)
+
+            with torch.no_grad():
+                prediction = model(original_image)
+                output = model(input_data)
+
+            output = rearrange(output, '(b t) o -> b t o', b=batch_size) # batch_size, 128, output(2)
+            prediction = prediction.argmax(dim=-1)
+            # print(output.shape)
+            # print(label)
+            
+            for i in range(batch_size):
+                if prediction[i] == label[i]:
+                    num_correct +=1
+                    correct_output = output[:,:,label[i]]# Take correct logits,  (b, 128), 밖에서. 
+                    shapley_matrix = get_shapley_matrix(all_ordered_pair,correct_output[i])
+                    shapley_contributions = shapley_matrix[:,:,1] - shapley_matrix[:,:,0] 
+                    shapley_value = (shapley_contributions * 1/weights).sum(dim=1)
+                    max_part_number = (int(shapley_value.argmax()))
+                    part_count[max_part_number] += 1
+        acc = num_correct/len(dataset)
+        print(f'Shapley result\n:{part_count}')
+        print(f'Inference\n:{num_correct}/{len(dataset)} = {acc}')
+        # 주어진 딕셔너리
+        part=['Hair',"Eye","Nose","Ear","Mouth","Hand","Foot"]
+        dict_to_bar(part = part, 
+                    part_count= part_count, 
+                    task= data_information['task'],
+                    class_name = class_name,
+                    num_correct=num_correct,
+                    nb_data=len(dataset),
+                    save_path=args.save_path)
         
-        model.to(device)
-        input_data = input_data.to(device)
-        original_image = original_image.to(device)
-        label = label.to(device)
-
-        with torch.no_grad():
-            prediction = model(original_image)
-            output = model(input_data)
-
-        output = rearrange(output, '(b t) o -> b t o', b=batch_size) # batch_size, 128, output(2)
-        prediction = prediction.argmax(dim=-1)
-        # print(output.shape)
-        # print(label)
-        
-        for i in range(batch_size):
-            if prediction[i] == label[i]:
-                num_correct +=1
-                correct_output = output[:,:,label[i]]# Take correct logits,  (b, 128), 밖에서. 
-                shapley_matrix = get_shapley_matrix(all_ordered_pair,correct_output[i])
-                shapley_contributions = shapley_matrix[:,:,1] - shapley_matrix[:,:,0] 
-                shapley_value = (shapley_contributions * 1/weights).sum(dim=1)
-                max_part_number = (int(shapley_value.argmax()))
-                part_count[max_part_number] += 1
-    print(part_count)
-    print(num_correct)
-    print(num_correct/dataset.__len__())
-        
-    import matplotlib.pyplot as plt
-    # 주어진 딕셔너리
-    part=['Hair',"Eye","Nose","Ear","Mouth","Hand","Foot"]
-    data=part_count
-    data2={}
-    for i in range(7):
-        data2[part[i]]=list(data.values())[i]
-    # {0: 1139, 1: 5, 2: 3, 3: 47, 4: 5, 5: 5, 6: 2}
-    # 딕셔너리의 key와 value를 각각 리스트로 추출
-    x = list(data2.keys())
-    y = list(data2.values())
-
-    # 그래프 생성
-    plt.bar(x, y)
-
-    # x축과 y축에 라벨 추가
-    plt.xlabel('x')
-    plt.ylabel('y')
-
-    # 그래프 제목 추가
-    # plt.title(f'{num_correct}/{len(dataset)}={num_correct/len(dataset)*100}%')
-    plt.title(f'{task} task  : {class_name} samples\n{num_correct}/{len(dataset)}={num_correct/len(dataset)*100:.2f}%')
-    
-    save_path = '/data/jong980812/project/mae/Shapley'
-    # 그래프 표시
-    plt.savefig(os.path.join(save_path,f'{task}_{class_name}_250_0.98_binary.png'))
 
 
 

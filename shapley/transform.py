@@ -13,9 +13,9 @@ class ThresholdTransform(object):
 class AddNoise(object):
   def __init__(self, scale):
     self.scl = scale
-    self.noise = torch.rand_like(x)/ self.scl
   def __call__(self, x):
-    return (x -self.noise )
+    noise = torch.rand_like(x)/ self.scl
+    return (x -noise )
 
 
 class DetachWhite(object):

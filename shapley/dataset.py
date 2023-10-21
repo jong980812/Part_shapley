@@ -8,12 +8,13 @@ import itertools
 import torch
 
 def get_dataset_information(args):
-    task = args.data_path.split('/')[3].split('_')[-1] 
-    class_name = args.data_path.split('/')[-1]
+    information = dict()
+    information['task'] = args.data_path.split('/')[3].split('_')[-1] 
+    information['class_names']= os.listdir(args.data_path)
+    return information
 
 
-
-class shapley_part(Dataset):
+class Shapley_part(Dataset):
     def __init__(self, data_folder, json_folder, task, transform=None):
         self.json_folder = json_folder
         self.data_folder = data_folder
@@ -22,6 +23,11 @@ class shapley_part(Dataset):
         self.image_paths = [os.path.join(data_folder, f) for f in os.listdir(data_folder) if f.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
         self.json_paths = [image_path.split('/')[-1].split('.')[0] + ".json" for image_path in self.image_paths] #! Get json path from image paths.
         # print(self.image_paths)
+    def __repr__(self) -> str:
+        target_foler= self.data_folder
+        target_task = self.task
+        number = len(self.image_paths)
+        return f'Shapley Part Dataset class\nTarget Folder:{target_foler}\nTarget Task:{target_task}\nData Num:{number}'
     def get_part_json(self, json_file_path):
         '''
         Get part dictionary from json path
@@ -285,9 +291,7 @@ class shapley_part(Dataset):
         return new_image.crop( self.get_coords(part_json['human_body'])[0])
     def __len__(self):
         return len(self.image_paths)
-    def __repr__(self) -> str:
-        
-        return 
+
     def __getitem__(self, idx):
         img_path = self.image_paths[idx]
         # print(img_path)

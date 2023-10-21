@@ -1,34 +1,11 @@
-from tqdm import tqdm
-import os
-import PIL
-from PIL import Image
-import numpy as np
-import json
+
 import torch
-from torch.utils.data import Dataset, DataLoader
-import itertools
-from torchvision import datasets, transforms, models
-from util.transform import ThresholdTransform,AddNoise,DetachWhite
-from einops import rearrange
 from itertools import product
 import math
-import torchvision.models as models
 
 
-def get_shapley_matrix(all_ordered_pair, correct_output):
-    shapley_values = torch.zeros_like(all_ordered_pair, dtype=torch.float32)
 
-    # 각 ordered pair에 대한 값을 가져와 shapley_values에 저장
-    for a,ordered_pairs in enumerate(all_ordered_pair):
-        for i, ordered_pair in enumerate(ordered_pairs):
-            # ordered_pair를 인덱스로 사용하여 correct_output에서 값을 가져옴
-            indices = ordered_pair  # ordered_pair를 텐서로 변환
-            # print(indices)
-            values1 = correct_output[int(indices[0])]
-            values2 = correct_output[int(indices[1])]  # correct_output에서 해당 위치의 값 가져오기
-            # print(values1,values2)
-            shapley_values[a,i] = torch.cat([values1.unsqueeze(0),values2.unsqueeze(0)],dim=0)
-    return shapley_values
+
 def binary_to_decimal(binary_tuple):
     decimal_value = 0
     binary_length = len(binary_tuple)
@@ -174,3 +151,19 @@ def get_ordered_pair():
             # 결과를 weights에 저장
             weights[i, j] = weight
     return all_ordered_pair, weights
+
+
+def get_shapley_matrix(all_ordered_pair, correct_output):
+    shapley_values = torch.zeros_like(all_ordered_pair, dtype=torch.float32)
+
+    # 각 ordered pair에 대한 값을 가져와 shapley_values에 저장
+    for a,ordered_pairs in enumerate(all_ordered_pair):
+        for i, ordered_pair in enumerate(ordered_pairs):
+            # ordered_pair를 인덱스로 사용하여 correct_output에서 값을 가져옴
+            indices = ordered_pair  # ordered_pair를 텐서로 변환
+            # print(indices)
+            values1 = correct_output[int(indices[0])]
+            values2 = correct_output[int(indices[1])]  # correct_output에서 해당 위치의 값 가져오기
+            # print(values1,values2)
+            shapley_values[a,i] = torch.cat([values1.unsqueeze(0),values2.unsqueeze(0)],dim=0)
+    return shapley_values
