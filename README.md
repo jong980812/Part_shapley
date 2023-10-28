@@ -1,9 +1,8 @@
-
 # Part Shapley
 
-![GitHub](https://img.shields.io/github/license/your-username/part-shapley)
-![GitHub last commit](https://img.shields.io/github/last-commit/your-username/part-shapley)
-![GitHub issues](https://img.shields.io/github/issues-raw/your-username/part-shapley)
+![GitHub](https://img.shields.io/github/license/jong980812/part-shapley)
+![GitHub last commit](https://img.shields.io/github/last-commit/jong980812/part-shapley)
+![GitHub issues](https://img.shields.io/github/issues-raw/jong980812/part-shapley)
 
 Part Shapley is a project that segments images into identifiable parts and uses Shapley values derived from game theory to calculate the influence of each part on predictions.
 
@@ -27,10 +26,4 @@ We use the 'AI-based Child Art Psychological Diagnosis Drawing Data' dataset. Fo
 3. Download the dataset and train the model.
 4. Perform Part Shapley calculations.
 
-## Contributions
 
-To contribute to this project, please refer to the [Contribution Guidelines](CONTRIBUTING.md).
-
-## License
-
-This project is released under the MIT License. For more details, see the [License](LICENSE) file.
