@@ -19,7 +19,7 @@ import random
 from shapley.transform import get_transform
 from shapley.dataset import Shapley_part,get_dataset_information
 from shapley.get_shapley_value import get_ordered_pair,get_shapley_matrix
-from shapley.visualizer import dict_to_bar
+from shapley.visualizer import shapley_class, shapley_task
 def get_args_parser():
     parser = argparse.ArgumentParser('MAE fine-tuning for image classification', add_help=False)
 
@@ -106,6 +106,9 @@ def main(args):
     # ready
     
     all_ordered_pair,weights = get_ordered_pair()
+    part_count_list = []
+    nb_data_list = []
+    num_correct_list = []
     part_number = all_ordered_pair.shape[0]
     for class_name in data_information['class_names']:
         print(f'\n#####################Target_class:{class_name} getting Shapley value#####################')
@@ -115,6 +118,7 @@ def main(args):
         print(dataset)
         num_correct = 0
         part_count = {i: 0 for i in range(part_number)}
+
         for new_imgs, original_image, label in tqdm(data_loader):
             # print(new_imgs.shape)
             input_data = new_imgs
@@ -150,14 +154,25 @@ def main(args):
         print(f'Inference\n:{num_correct}/{len(dataset)} = {acc}')
         # 주어진 딕셔너리
         part=['Hair',"Eye","Nose","Ear","Mouth","Hand","Foot"]
-        dict_to_bar(part = part, 
+        num_correct_list.append(num_correct)
+        part_count_list.append(part_count) # For Total shapley
+        nb_data_list.append(len(dataset)) # For Total shapley
+        shapley_class(args,
+                    part = part, 
                     part_count= part_count, 
                     task= data_information['task'],
                     class_name = class_name,
                     num_correct=num_correct,
                     nb_data=len(dataset),
                     save_path=args.save_path)
-        
+    shapley_task(args,
+                part = part, 
+                part_count_list= part_count_list, 
+                task= data_information['task'],
+                class_name = class_name,
+                num_correct=sum(num_correct_list),
+                nb_data=sum(nb_data_list),
+                save_path=args.save_path)
 
 
 
