@@ -1,8 +1,8 @@
 # Part Shapley
 
-![GitHub](https://img.shields.io/github/license/jong980812/part-shapley)
-![GitHub last commit](https://img.shields.io/github/last-commit/jong980812/part-shapley)
-![GitHub issues](https://img.shields.io/github/issues-raw/jong980812/part-shapley)
+![GitHub](https://img.shields.io/github/license/jong980812/Part_shapley)
+![GitHub last commit](https://img.shields.io/github/last-commit/jong980812/Part_shapley)
+![GitHub issues](https://img.shields.io/github/issues-raw/jong980812/Part_shapley)
 
 Part Shapley is a project that segments images into identifiable parts and uses Shapley values derived from game theory to calculate the influence of each part on predictions.
 
