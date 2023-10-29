@@ -225,7 +225,7 @@ class Shapley_part(Dataset):
     def create_new_images(self,img, binary_combination, part_imgs,part_json,sex):
         #! Making New images
         original_img = img
-        empty_face_active, eye_active, nose_active, ear_active, mouth_active, hand_active, foot_active = binary_combination
+        hair_active, eye_active, nose_active, ear_active, mouth_active, hand_active, foot_active = binary_combination
         new_image = img.copy()
         #! Original image에서 Lower body, Upperbody빼고 모두 없앰.
         for i in range(len(part_imgs['empty_face'])):
@@ -262,7 +262,7 @@ class Shapley_part(Dataset):
           
         #!######
         
-        if empty_face_active:
+        if hair_active:
             # new_image.paste(part_imgs["empty_face"][0],self.get_coords(part_json['empty_face'])[0])
             new_image.paste(part_imgs["only_hair"][0],self.get_coords(part_json['only_hair'])[0])
             new_image.paste(part_imgs["only_face"][0], self.get_coords(part_json['only_face'])[0])  # 원하는 위치에 붙임
@@ -358,4 +358,4 @@ class Shapley_part(Dataset):
         new_imgs = torch.cat(new_imgs,dim=0)
         # image = self.transform(image)
         # image_3ch = image.expand(3,-1,-1)
-        return new_imgs, self.transform(original_image), label 
+        return new_imgs, self.transform(original_image), label ,img_path

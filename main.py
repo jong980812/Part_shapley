@@ -119,7 +119,7 @@ def main(args):
         num_correct = 0
         part_count = {i: 0 for i in range(part_number)}
 
-        for new_imgs, original_image, label in tqdm(data_loader):
+        for new_imgs, original_image, label,img_paths in tqdm(data_loader):
             # print(new_imgs.shape)
             input_data = new_imgs
             # print('complete')
@@ -139,14 +139,16 @@ def main(args):
             prediction = prediction.argmax(dim=-1)
             # print(output.shape)
             # print(label)
-            
+            shapley_img_lists=dict()
             for i in range(batch_size):
                 if prediction[i] == label[i]:
                     num_correct +=1
+                    img_name = img_paths[i]
                     correct_output = output[:,:,label[i]]# Take correct logits,  (b, 128), 밖에서. 
                     shapley_matrix = get_shapley_matrix(all_ordered_pair,correct_output[i])
                     shapley_contributions = shapley_matrix[:,:,1] - shapley_matrix[:,:,0] 
                     shapley_value = (shapley_contributions * 1/weights).sum(dim=1)
+                    shapley_img_lists[img_name]=shapley_value.max()
                     max_part_number = (int(shapley_value.argmax()))
                     part_count[max_part_number] += 1
         acc = num_correct/len(dataset)
