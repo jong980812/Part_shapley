@@ -19,7 +19,7 @@ import random
 from shapley.transform import get_transform
 from shapley.dataset import Shapley_part,get_dataset_information
 from shapley.get_shapley_value import get_ordered_pair,get_shapley_matrix
-from shapley.visualizer import shapley_class, shapley_task
+from shapley.visualizer import shapley_class, shapley_task, representative_each_class
 def get_args_parser():
     parser = argparse.ArgumentParser('MAE fine-tuning for image classification', add_help=False)
 
@@ -110,15 +110,18 @@ def main(args):
     nb_data_list = []
     num_correct_list = []
     part_number = all_ordered_pair.shape[0]
+    task = data_information['task']
+    shapley_img_lists=dict()
+    best_part_index = dict()
     for class_name in data_information['class_names']:
         print(f'\n#####################Target_class:{class_name} getting Shapley value#####################')
         target_path = os.path.join(args.data_path, class_name)
-        dataset = Shapley_part(target_path,args.json_path,task=data_information['task'],transform=transform)
+        dataset = Shapley_part(target_path,args.json_path,task=task,transform=transform)
         data_loader=DataLoader(dataset,args.batch_size,shuffle=False,num_workers=8)
         print(dataset)
         num_correct = 0
         part_count = {i: 0 for i in range(part_number)}
-
+        image_and_shapley=dict()
         for new_imgs, original_image, label,img_paths in tqdm(data_loader):
             # print(new_imgs.shape)
             input_data = new_imgs
@@ -139,7 +142,6 @@ def main(args):
             prediction = prediction.argmax(dim=-1)
             # print(output.shape)
             # print(label)
-            shapley_img_lists=dict()
             for i in range(batch_size):
                 if prediction[i] == label[i]:
                     num_correct +=1
@@ -148,9 +150,12 @@ def main(args):
                     shapley_matrix = get_shapley_matrix(all_ordered_pair,correct_output[i])
                     shapley_contributions = shapley_matrix[:,:,1] - shapley_matrix[:,:,0] 
                     shapley_value = (shapley_contributions * 1/weights).sum(dim=1)
-                    shapley_img_lists[img_name]=shapley_value.max()
+                    image_and_shapley[img_name]=shapley_value.detach().tolist()
                     max_part_number = (int(shapley_value.argmax()))
                     part_count[max_part_number] += 1
+            break
+        shapley_img_lists[class_name]=image_and_shapley
+        best_part_index[class_name] = max(part_count, key=part_count.get)
         acc = num_correct/len(dataset)
         print(f'Shapley result\n:{part_count}')
         print(f'Inference\n:{num_correct}/{len(dataset)} = {acc}')
@@ -175,6 +180,13 @@ def main(args):
                 num_correct=sum(num_correct_list),
                 nb_data=sum(nb_data_list),
                 save_path=args.save_path)
+    representative_each_class(shapley_lists=shapley_img_lists,
+                              best_part_list=best_part_index,
+                              task=task,
+                              class_names=data_information['class_names'],
+                              n_show=10,
+                              save_path=args.save_path,
+                              json_path=args.json_path)
 
 
 
