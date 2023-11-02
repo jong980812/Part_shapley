@@ -6,5 +6,7 @@ moana*
 debug
 
 
-
-*ipynb
+pcb.ipynb
+shapely_aihub.ipynb
+t-sne.ipynb
+shapely.ipynb
