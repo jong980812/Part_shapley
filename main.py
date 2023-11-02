@@ -153,7 +153,6 @@ def main(args):
                     image_and_shapley[img_name]=shapley_value.detach().tolist()
                     max_part_number = (int(shapley_value.argmax()))
                     part_count[max_part_number] += 1
-            break
         shapley_img_lists[class_name]=image_and_shapley
         best_part_index[class_name] = max(part_count, key=part_count.get)
         acc = num_correct/len(dataset)
@@ -184,7 +183,7 @@ def main(args):
                               best_part_list=best_part_index,
                               task=task,
                               class_names=data_information['class_names'],
-                              n_show=10,
+                              n_show=5,
                               save_path=args.save_path,
                               json_path=args.json_path)
 

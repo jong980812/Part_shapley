@@ -79,24 +79,26 @@ def representative_each_class(shapley_lists, best_part_list,task, class_names, j
             for j in range(n_show):
                 if i==0:#beset
                     axes[i, j].imshow(get_humna_body(sorted_shapley_list[j],json_path), cmap='gray')
+                    axes[i, j].axis('off')
                 else:
                     img_list=shapley_lists[class_names[plotting_order[i-1]]]#another class imig lists
                     random_key = random.choice(list(img_list.keys()))
                     axes[i, j].imshow(get_humna_body(random_key,json_path), cmap='gray')
+                    axes[i, j].axis('off')
         for i in range(num_class):        
             if i ==0:
-                axes[i, 0].set_title(f'Best {class_name} - {part[best_part]}', fontsize=10)
+                axes[i, 0].set_title(f'Best {class_name} - {part[best_part]}', fontsize=30,ha='center')
             else:
-                axes[i, 0].set_title(f'{class_name} - {part[best_part]}', fontsize=10)
+                axes[i, 0].set_title(f'{class_names[plotting_order[i-1]]} - {part[best_part]}', fontsize=30)
         plt.subplots_adjust(wspace=0.1, hspace=0.1)
-        plt.savefig(os.path.join(save_path,f'{class_name}_{part[best_part]}_vs_another.png'))
+        plt.savefig(os.path.join(save_path,f'{task}_{class_name}_{part[best_part]}_vs_another.png'))
 
 def get_humna_body(image_path,json_path):
     json_full_path =os.path.join(json_path, image_path.split('/')[-1].split('.')[0] + ".json")
     part_json = get_part_json(json_full_path)
     human_body_coords =get_coords(part_json['human_body'])
     img = Image.open(image_path)
-    return img.crop(human_body_coords[0])
+    return img.crop(human_body_coords[0]).resize((300,400))
     
     
 def get_part_json(json_file_path):

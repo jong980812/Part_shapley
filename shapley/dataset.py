@@ -6,6 +6,8 @@ import numpy as np
 import json
 import itertools
 import torch
+import random 
+random.seed(777)
 
 def get_dataset_information(args):
     information = dict()
