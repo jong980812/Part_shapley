@@ -6,7 +6,10 @@ class ThresholdTransform(object):
     self.thr_255 = thr_255
     self.thr = thr_255 /255.0  # input threshold for [0..255] gray level, convert to [0..1]
   def __call__(self, x):
-    return (x > self.thr).to(x.dtype)  # do not change the data type
+    if self.thr>=1:
+      return x
+    else:
+      return (x > self.thr).to(x.dtype)  # do not change the data type
   def __repr__(self):
     return f'binaryTH:{self.thr_255}'
   
