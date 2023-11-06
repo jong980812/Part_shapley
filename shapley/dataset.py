@@ -73,10 +73,10 @@ class Shapley_part(Dataset):
             return extracted_coordinates
     def get_white_image(self,size):
         return Image.new("RGB", size, (255, 255, 255))
-    def get_only_hair(self,img,part_imgs,part_json):
-        head_coords = self.get_coords(part_json['head'])
-        head = part_imgs['head'][0]#!
-        hair_coords = self.get_coords(part_json['hair'])
+    def get_only_hair(self,img,part_imgs,part_json): #머리카락 
+        # head_coords = self.get_coords(part_json['head'])
+        # head = part_imgs['head'][0]#!
+        hair_coords = self.get_coords(part_json['hair'])# 머리카락 기준.
         hair = part_imgs['hair'][0]#!
         face_coords = self.get_coords(part_json['face'])
         face = part_imgs['face'][0]
@@ -84,6 +84,7 @@ class Shapley_part(Dataset):
         neck = part_imgs['neck'][0]
         white_image = self.get_white_image(img.size)
         white_image.paste(hair,hair_coords[0])
+        
         white_image.paste(self.get_white_image(face.size),face_coords[0])
         white_image.paste(self.get_white_image(neck.size),neck_coords[0])
         return white_image.crop(hair_coords[0]), [[hair_coords[0][0],hair_coords[0][1]],[hair_coords[0][2],hair_coords[0][3]]]

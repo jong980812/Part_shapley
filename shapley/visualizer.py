@@ -32,7 +32,7 @@ def shapley_task(args,part,part_count_list, task, class_name, num_correct, nb_da
     plt.clf()
     data2={}
     for part_name in part:
-        data2[part_name]=0
+        data2[part_name]=0 
     for i in range(7):
         value=0
         for part_count in part_count_list:
