@@ -109,9 +109,9 @@ def count_ones(binary_tuple):
         if bit == 1:
             count += 1
     return count
-def get_ordered_pair():
+def get_ordered_pair(i=7):
 
-    n = 6  # digit의 개수
+    n = i-1  # digit의 개수
     digits = [0, 1]  # 각 digit의 가능한 값
 
     # 경우의 수 생성
@@ -120,7 +120,7 @@ def get_ordered_pair():
 
     index_to_insert = 1  # 두 번째 위치에 추가하려면 인덱스 1을 사용합니다.
     all_ordered_pair=[]
-    for index in range(7):
+    for index in range(i):
         ordered_pair=[] 
         index_to_insert = index
         for combi in part_combinations:
