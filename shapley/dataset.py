@@ -7,6 +7,7 @@ import json
 import itertools
 import torch
 import random 
+from torchvision import transforms, datasets     
 random.seed(777)
 
 def get_dataset_information(args):
@@ -628,6 +629,53 @@ class Shapley_part_asd(Dataset):
         # image = self.transform(image)
         # image_3ch = image.expand(3,-1,-1)
         return new_imgs, self.transform(original_image), label ,img_path
+
+
+class AI_HUB(Dataset):
+    def __init__(self, root_dir, json_dir, is_train):
+        self.transform = transforms.Compose([
+                transforms.Resize((224,168)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.98, 0.98, 0.98], std=[0.065, 0.065, 0.065])])
+        mode = "train" if is_train else "val"
+        self.data_path = os.path.join(root_dir, mode) 
+        self.json_path = json_dir 
+        self.ext = "jpg"
+        print(self.transform)
+        self.dataset = datasets.ImageFolder(self.data_path, None)
+        self.class_ind = self.dataset.class_to_idx
+        self.img_path_list = [elem[0] for elem in self.dataset.make_dataset(self.data_path, self.class_ind, extensions=self.ext)]
+        print("img_root_dir : ", self.data_path)
+        print("json_root_dir : ", self.json_path)
+        print("extension : ", self.ext)
+        print("class_ind : ", self.class_ind)
+
+    def __len__(self):
+        return self.dataset.__len__()
+
+    def _crop_image(self, img, coords) :
+        x, y, w, h = coords
+        xmin, ymin = int(x), int(y)
+        xmax, ymax = int(x + w), int(y + h)
+        cropped_img = img.crop([xmin, ymin, xmax, ymax]) 
+        return cropped_img
+
+    def __getitem__(self, idx):
+        sample, label = self.dataset[idx]
+
+        json_name = self.img_path_list[idx].split('/')[-1].split('.')[0] + ".json"
+        with open(os.path.join(self.json_path, json_name), 'r') as f :   
+            part_anns = json.load(f)['annotations']['bbox'][0]
+        
+        assert part_anns['label'] == '사람전체'
+        coords = [part_anns['x'], part_anns['y'], part_anns['w'], part_anns['h']]
+
+        sample = self._crop_image(sample, coords)
+        sample = self.transform(sample) 
+        return sample, label   # json_name
+    
+    
+    
 if __name__=='__main__':
     from torchvision import datasets, transforms, models
     transform= transforms.Compose([
