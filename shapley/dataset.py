@@ -674,7 +674,36 @@ class AI_HUB(Dataset):
         sample = self.transform(sample) 
         return sample, label   # json_name
     
-    
+class Stanford_car_with_type(Dataset):
+    def __init__(self, data_path, transform, is_train):
+        self.is_train = is_train
+        self.data_path = os.path.join(data_path,('train' if is_train else 'test'))
+        self.anno_path = os.path.join("/data/ahngeo11/asd/Part_shapley", ('cars_train_with_type.csv' if is_train else 'cars_test_with_type.csv'))
+        import pandas as pd
+        # CSV 파일 경로
+        # CSV 파일을 DataFrame으로 읽기
+        df = pd.read_csv(self.anno_path,header=0,delimiter=',')
+        self.transform = transform
+        # 'path' 열을 self.image_paths로, 'lab' 열을 self.label_list로 설정
+        self.image_list = df.values[:,0].tolist()
+        self.label_list = df.values[:,-1].tolist()
+        # self.box_list = df.values[:,1:5].tolist()
+    def __len__(self):
+        return len(self.image_list)
+    def __repr__(self) -> str:
+        return 'Stanford Car_type' + ('Train' if self.is_train else 'Test')+ f': {len(self.image_list)}\n{self.transform}'
+    def __getitem__(self, index):
+        img_path = os.path.join(self.data_path,self.image_list[index])
+        label = self.label_list[index]
+        # box_coords = self.box_list[index]
+        img = Image.open(img_path)
+        if img.mode == 'L':
+            img = img.convert('RGB')
+        # cropped_img = img.crop(box_coords)
+        if self.transform:
+            img = self.transform(img)
+            # cropped_img = self.transform(cropped_img)
+        return img, label
     
 if __name__=='__main__':
     from torchvision import datasets, transforms, models
